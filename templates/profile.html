@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ profile.name }}</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+    }     h1 {
+        text-align: center;
+        padding-top: 15px;
+    }        .navbar .nav-item {
+        margin-right: 10px;
+    }   .navbar .nav-link:hover {
+        background-color: transparent;
+        color: #d3d3d3 !important;
+    }   .grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-auto-rows: minmax(250px, auto);
+    grid-gap: 1em;
+    padding: 1em;
+}
+.grid-item {
+        display: grid;
+        grid-template-rows: 1fr auto;
+        grid-column-start: auto;
+        padding: 1em;
+        box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.2);
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+    .image-wrapper {
+        position: relative;
+        padding: 10px; /* add padding here */
+        box-sizing: border-box; /* to include the padding in the element's total width and height */
+        width: 250px; 
+        height: 250px; 
+        grid-row: 1;
+        overflow: hidden;
+    }
+    .grid-item img {
+        width: calc(100% - 20px); /* subtract double the padding from the width */
+        height: calc(100% - 20px); /* subtract double the padding from the height */
+        object-fit: cover;
+    }    .emotion {
+        text-align: center;
+    }  .button-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 10px;
+        grid-row: 2;
+    }.button-container form {
+        width: 50%;  
+    }
+    .delete-button, .update-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;  
+        height: 36px;  
+        font-size: 0.875em;  
+        line-height: 1.5;
+        border-radius: 0.2rem;
+        transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        white-space: nowrap;  
+    }
+    .delete-button:hover, .update-button:hover {
+        filter: brightness(90%);
+    }
+    #upload-form {
+    margin: 30px 0; 
+}  #upload-status {
+    margin-bottom: 20px; 
+}  
+</style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/training">Emotion Tracker</a>
+            </div>
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/training">Profiles</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/webcam">Webcam</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>{{ profile.name }}</h1>
+        <form id="upload-form" style="text-align:center;">
+            <input type="file" name="image" multiple required>
+            <input type="text" name="emotion" placeholder="Enter emotion" required>
+            <button id="submit">Submit</button>
+        </form>
+        <div id="upload-status" style="text-align:center;"></div>
+        {% for emotion, image_list in images.items() %}
+            {% if emotion != 'name' %}
+                <div class="emotion">
+                    <h2>{{ emotion }}</h2>
+                    <div class="grid-container">
+                        {% for image in image_list %}
+                            <div class="grid-item" id="grid-container-{{emotion}}">
+                                <div class="image-wrapper">
+                                    <img src="{{ image.url }}" alt="{{ emotion }}-image">
+                                </div>
+                                <div class="button-container">
+                                    <form method="POST" action="/delete_image" style="width: 100%;">
+                                        <input type="hidden" name="profile_name" value="{{ profile.name }}">
+                                        <input type="hidden" name="image_url" value="{{ image.url }}">
+                                        <button class="btn btn-danger btn-sm delete-button" type="submit">Delete</button>
+                                    </form>
+                                    <form method="POST" action="/update_image" style="width: 100%;">
+                                        <input type="hidden" name="profile_name" value="{{ profile.name }}">
+                                        <input type="hidden" name="image_url" value="{{ image.url }}">
+                                        <input type="hidden" name="new_emotion" value="{{ emotion }}">
+                                        <button class="btn btn-primary btn-sm update-button" type="submit">Update Emotion</button>
+                                    </form>
+                                </div>
+                            </div>                        
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    <button id="train-button">Train</button>
+    <script>
+  // Define your model creation function
+function createModel(numClasses) {
+    const model = tf.sequential();
+    model.add(tf.layers.conv2d({ filters: 32, kernelSize: 3, activation: 'relu', inputShape: [64, 64, 3] }));
+    model.add(tf.layers.maxPooling2d({ poolSize: [2, 2] }));
+    model.add(tf.layers.conv2d({ filters: 64, kernelSize: 3, activation: 'relu' }));
+    model.add(tf.layers.maxPooling2d({ poolSize: [2, 2] }));
+    model.add(tf.layers.conv2d({ filters: 64, kernelSize: 3, activation: 'relu' }));
+    model.add(tf.layers.flatten());
+    model.add(tf.layers.dense({ units: 64, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: numClasses })); // Number of emotions
+    return model;
+}
+
+document.getElementById('train-button').addEventListener('click', async function (event) {
+    try {
+        const labels = [];
+        const imagesData = [];
+        const labelIndex = {
+            'happy': 0,
+            'sad': 1,
+            'neutral': 2,
+            'angry': 3
+            // Add more if you have more emotions
+        };
+        const numClasses = Object.keys(labelIndex).length;
+
+        // Load images and labels
+        for (const img of document.querySelectorAll('.grid-container .grid-item img')) {
+            const imageData = await tf.browser.fromPixelsAsync(img).resizeNearestNeighbor([64, 64]);
+            imagesData.push(imageData);
+            const label = img.parentElement.parentElement.nextElementSibling.querySelector('.emotion').textContent;
+            labels.push(label);
+        }
+
+        const xs = tf.stack(imagesData).div(255);
+        const ys = tf.oneHot(labels.map(label => labelIndex[label]), numClasses);
+
+        // Use the createModel function
+        const model = createModel(numClasses);
+
+        // Compile model
+        model.compile({
+            loss: 'categoricalCrossentropy',
+            optimizer: 'adam',
+        });
+        // Train model
+        await model.fit(xs, ys, {
+            epochs: 10,
+            callbacks: tfvis.show.fitCallbacks(
+                { name: 'Training Performance' },
+                ['loss'],
+                { height: 200, callbacks: ['onEpochEnd'] }
+            ),
+        });
+        // Save model
+        await model.save('indexeddb://my-model');
+
+    } catch (error) {
+        console.error(error);
+    }
+});
+    </script>
+    <script>
+        document.getElementById('submit').addEventListener('click', function (event) {
+            event.preventDefault();
+            var formData = new FormData(document.getElementById('upload-form'));
+            formData.append('profile_name', '{{ profile.name }}');
+            var emotion = formData.get('emotion');
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Upload failed');
+                }
+            }).then(data => {
+                data.urls.forEach((url, i) => {
+                    var container = document.createElement('div');
+                    container.className = 'grid-item';
+                    let img = document.createElement('img');
+                    img.src = url;
+                    container.appendChild(img);
+                    let p = document.createElement('p');
+                    p.textContent = emotion;
+                    p.className = "emotion";
+                    container.appendChild(p);
+
+                    let deleteBtn = document.createElement('button');
+                    deleteBtn.className = "delete-button";
+                    deleteBtn.textContent = "Delete";
+                    deleteBtn.setAttribute("data-url", url);
+                    container.appendChild(deleteBtn);
+
+                    let updateBtn = document.createElement('button');
+                    updateBtn.className = "update-button";
+                    updateBtn.textContent = "Update Emotion";
+                    updateBtn.setAttribute("data-url", url);
+                    container.appendChild(updateBtn);
+
+                    document.getElementById(`grid-container-${emotion}`).appendChild(container);
+                });
+                document.getElementById('upload-status').textContent = "Upload successful";
+            }).catch(error => {
+                document.getElementById('upload-status').textContent = error.message;
+            });
+        });   
+        window.onload = function() {
+            document.querySelectorAll('.delete-button').forEach(function(button) {
+                button.addEventListener('click', function () {
+                    var image_url = this.getAttribute('data-url');
+                    fetch('/delete_image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            'profile_name': '{{ profile.name }}',
+                            'image_url': image_url
+                        })
+                    }).then(function(response) {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('Failed to delete image.');
+                        }
+                    });
+                });
+            });
+        document.querySelectorAll('.update-button').forEach(function(button) {
+            button.addEventListener('click', function () {
+                var image_url = this.getAttribute('data-url');
+                var new_emotion = prompt('Enter new emotion');
+                if (new_emotion) {
+                    fetch('/update_image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            'profile_name': '{{ profile.name }}',
+                            'image_url': image_url,
+                            'new_emotion': new_emotion
+                        })
+                    }).then(function(response) {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('Failed to update image emotion.');
+                        }
+                        });
+                    }
+                });
+            });
+
+        var gridContainer = document.querySelector('.grid-container');
+        var maxImages = 0;
+
+        // Find the emotion with the most images
+        gridContainer.querySelectorAll('.emotion').forEach(function(emotion) {
+            var imageCount = emotion.querySelectorAll('.grid-item').length;
+            if (imageCount > maxImages) {
+                maxImages = imageCount;
+            }
+        });
+        
+        // Add empty grid items to ensure that images for different emotions align correctly
+        gridContainer.querySelectorAll('.emotion').forEach(function(emotion) {
+            var imageCount = emotion.querySelectorAll('.grid-item').length;
+            for (var i = imageCount; i < maxImages; i++) {
+                var gridItem = document.createElement('div');
+                gridItem.className = 'grid-item';
+                emotion.appendChild(gridItem);
+            }
+        });
+        };
+    </script>
+</body>
+</html>

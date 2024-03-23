@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Training Profiles</title>
+    
+    <!-- <script src="https://simplewebrtc.com/latest-v3.js"></script> -->
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+    
+        h1 {
+            text-align: center;
+            padding-top: 15px;  
+        }
+    
+        .navbar .nav-item {
+            margin-right: 10px;  
+        }
+    
+        .navbar .nav-link:hover {
+            background-color: transparent;
+            color: #d3d3d3 !important;
+        }
+    
+        .profile-card {
+            border: 1px solid #ccc;
+            width: 200px;
+            margin: 15px;
+            box-shadow: 2px 2px 6px 0px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+    
+        .profile-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+    
+        .profile-card h2 {
+            margin: 15px 0;
+        }
+    
+        #profilesGrid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    </style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container-fluid">
+            <div class="navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url_for('index') }}">Home</a>
+                    </li>
+                    <li class="nav-item ">
+                        <a class="nav-link text-white" href="{{ url_for('training') }}">Training</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div><h1> Training Profiles <h1></div>
+
+    <!-- Create Profile Button -->
+    <div style="display: flex; justify-content: center; margin-top: 20px;">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createProfileModal">Create Profile</button>
+    </div>
+
+    <!-- Display Profiles -->
+    <div id="profilesGrid" class="profile-cards">
+        {% for profile_name, profile_details in profiles.items() %}
+            <div class="profile-card">
+                <h2>{{ profile_details.name }}</h2>
+                <a href="{{ url_for('profile', profile_name=profile_name) }}">View Profile</a>
+            </div>
+        {% endfor %}
+    </div>    
+
+    <!-- Create Profile Modal -->
+        <div class="modal fade" id="createProfileModal" tabindex="-1" role="dialog"
+            aria-labelledby="createProfileModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createProfileModalLabel">Create Profile</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group">
+                                <label for="profile-name" class="col-form-label">Name:</label>
+                                <input type="text" class="form-control" id="profile-name">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="createProfile()">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        function createProfile() {
+            var name = document.getElementById('profile-name').value;
+        
+            $.ajax({
+                url: '/create_profile',
+                data: {
+                    'name': name
+                },
+                type: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        var profilesGrid = document.getElementById('profilesGrid');
+                        var newProfileCard = `
+                            <div class="profile-card">
+                                <h2>${name}</h2>
+                                <a href="/profile/${name}">View Profile</a>
+                            </div>`;
+                        profilesGrid.innerHTML += newProfileCard;
+                    } else {
+                        console.error('Error creating profile:', response.message);
+                    }
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        }
+    </script>      
+
+</body>
+
+</html>

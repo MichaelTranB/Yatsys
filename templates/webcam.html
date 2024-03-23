@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>YatSys Video Streaming</title>
+    <!-- <script src="https://simplewebrtc.com/latest-v3.js"></script> -->
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+      
+        h1 {
+            padding-top: 15px;  
+        }
+      
+        .cameraName {
+              margin-top: 15px;
+              margin-bottom: 5px;  
+          }
+
+        #selectRoom {
+            margin-bottom: 20px;
+        }
+
+        #selectRoom label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        #selectRoom input[type="text"] {
+            width: 200px;
+            padding: 5px;
+            font-size: 14px;
+        }
+
+        #selectRoom button {
+            padding: 8px 20px;
+            font-size: 14px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #consultingRoom {
+            display: flex;
+            justify-content: center;
+            text-align: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 32px;
+            margin-bottom: 50px;
+        }
+      
+          #consultingRoom > div > p {
+            margin-bottom: 5px;  
+        }
+
+        #localVideo,
+        #remoteVideo {
+            width: 320px;
+            height: 240px;
+            border: 1px solid #ccc;
+            margin: 10px;
+        }
+
+        hr {
+            color: #4CAF50;
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+            height: 1.5px;
+            border-width: 0;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            width: 80%;
+        }
+      
+        .navbar .nav-item {
+            margin-right: 10px;  /* adjust this value to increase or decrease the gap */
+        }
+      
+        .navbar .nav-link:hover {
+            background-color: transparent;
+            color: #d3d3d3 !important;
+        }
+      
+    </style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container-fluid">
+            <div class="navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url_for('index') }}">Home</a>
+                    </li>
+                    <li class="nav-item ">
+                        <a class="nav-link text-white" href="{{ url_for('training') }}">Training</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Content Here -->
+    <h1 style="text-align:center;">YatSys Video Streaming</h1>
+    <p style="text-align:center;">Camera 1 (Built-in camera)</p>
+    <br />
+    <div id="selectRoom"
+        style="display: flex; justify-content: center; align-items: center; flex-direction: row; gap: 10px;">
+        <input type="text" name="" id="roomNumber" placeholder="Type room name" style="text-align:center;">
+        <button id="goRoom">Create a Room</button>
+        <button id="joinRoom">Join</button>
+    </div>
+
+    <div id="consultingRoom">
+        <div>
+            <p>Local Video</p>
+            <video id="localVideo" autoplay></video>
+            <div id="emotion_result">Emotion Result: No emotion detected</div>
+        </div>
+        <div>
+            <p>Remote Video</p>
+            <video id="remoteVideo" autoplay></video>
+            <div>-</div>
+        </div>
+    </div>
+    <hr>
+   
+    <div style="text-align:center;">
+        <p class="cameraName"> Camera 2 (RPi-1)</p>
+        <a href="https://gnjokalq.connect.remote.it/" target="_blank"> Link for RasPi 1 </a>
+        <p class="cameraName"> Camera 3 (RPi-2)</p>
+        <a href="https://v6splfqd.connect.remote.it/" target="_blank">Link for RasPi 2 </a>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.0/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
